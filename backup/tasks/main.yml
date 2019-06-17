@@ -1,0 +1,21 @@
+---
+- name: Check ansible playbook is running
+  shell: uname -a
+  register: out_uname
+  tags:
+    - pro
+
+- debug: var=out_uname.stdout_lines
+  tags:
+    - pro
+
+- name: Run innobackupex stream backup
+  shell: innobackupex --compress --stream=xbstream /mysql/tmp/.backup | ssh -i /home/ansible/.ssh/id_rsa ansible@exportor2 "xbstream -x -C /mysql/tmp/.backup/"
+  register: out_backup
+  ignore_errors: no
+  tags:
+    - pro
+
+- debug: var=out_backup.stdout_lines
+  tags:
+    - pro

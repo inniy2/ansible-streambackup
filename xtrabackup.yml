@@ -1,0 +1,15 @@
+---
+
+- hosts: exportor1
+  connection: local
+
+  roles:
+    - backup
+
+- hosts: exportor2
+  remote_user: ansible
+  vars:
+    ansible_ssh_private_key_file: "/home/ansible/.ssh/id_rsa"
+  
+  roles:
+    - restore

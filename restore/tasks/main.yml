@@ -1,0 +1,65 @@
+---
+
+- name: Check ansible is working
+  shell: hostname -f
+  register: out_hostname
+  tags: pro
+
+- debug: var=out_hostname.stdout_lines
+  tags: pro
+
+- name: Kill mysqld_safe & mysqld
+  shell: kill -9 $( ps aux | egrep -e "mysqld_safe|mysqld.sock" | awk '{print $2}' )
+  sudo: yes
+  ignore_errors: yes
+  tags: pro
+
+- name: Remove MySQL data
+  shell: rm -rf /var/lib/mysql/*
+  sudo: yes
+  tags: pro
+
+- name: Decompress backup
+  shell: innobackupex --decompress --tmpdir=/mysql/tmp  /mysql/tmp/.backup
+  sudo: yes
+  tags: pro
+
+- name: Delete .qp
+  shell: find /mysql/tmp/.backup  -name "*.qp" -exec rm {} \;
+  sudo: yes
+  tags: pro
+
+- name: Apply log
+  shell: innobackupex --prepare --apply-log --use-memory=1G /mysql/tmp/.backup
+  sudo: yes
+  register: out_applylog
+  tags: pro
+
+- debug: var=out_applylog.stdout_lines
+  tags: pro
+
+- name: Copy-back
+  shell: innobackupex --copy-back  /mysql/tmp/.backup
+  sudo: yes
+  tags: pro
+
+- name: Change owner
+  shell: chown -R mysql.mysql /var/lib/mysql
+  sudo: yes
+  tags: pro
+
+- name: Start MySQL
+  service: 
+    name: mysql
+    state: started
+  sudo: yes 
+  register: out_startmysql
+  tags: pro
+
+- debug: var=out_startmysql.stdout_lines
+  tags: pro
+
+- name: Clean up - Delete backup 
+  shell: rm -rf /mysql/tmp/.backup/*
+  sudo: yes
+  tags: pro
